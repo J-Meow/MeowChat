@@ -1,6 +1,6 @@
 <script lang="ts">
     import { navTo } from "$lib/nav"
-    import { auth, ApiError } from "$lib/api"
+    import { auth, ApiError, misc } from "$lib/api"
     import { currentContext } from "$lib/session"
 
     if ($currentContext) {
@@ -13,10 +13,17 @@
         event.preventDefault()
         const form = event.target as HTMLFormElement
         const formData = new FormData(form)
+        let homeServer = ""
+        try {
+            homeServer = await misc.getServerURI(formData.get("server") as string)
+        } catch (e) {
+            errorMessage = (e as Error).toString()
+            return
+        }
         const username = formData.get("username") as string
         const password = formData.get("password") as string
         try {
-            let apiCtx = await auth.login("https://matrix-client.matrix.org", username, password)
+            let apiCtx = await auth.login(homeServer, username, password)
             errorMessage = ""
             $currentContext = apiCtx
             navTo("/app")
@@ -32,10 +39,10 @@
     }
 </script>
 
-<p>Default homeserver is matrix.org</p>
 <form onsubmit={handleSubmit}>
-    <input type="text" name="username" placeholder="Username" />
-    <input type="password" name="password" placeholder="Password" />
+    <input type="text" name="server" placeholder="Homeserver" required value="matrix.org" />
+    <input type="text" name="username" placeholder="Username" required />
+    <input type="password" name="password" placeholder="Password" required />
     {#if errorMessage}
         <p>{errorMessage}</p>
     {/if}

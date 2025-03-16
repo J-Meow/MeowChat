@@ -14,6 +14,22 @@ type ApiLoginResponse = {
     device_id: string
 }
 
+export const misc = {
+    getServerURI: async (homeServer: string) => {
+        try {
+            let url = homeServer
+            if (!url.startsWith("http")) {
+                url = "https://" + url
+            }
+            const response = await fetch(`${url}/.well-known/matrix/client`)
+            const json = await response.json()
+            return json["m.homeserver"].base_url
+        } catch (error) {
+            throw new Error("Invalid Homeserver")
+        }
+    },
+}
+
 export const auth = {
     login: async (homeServer: string, username: string, password: string) => {
         const response = await fetch(`${homeServer}/_matrix/client/v3/login`, {
