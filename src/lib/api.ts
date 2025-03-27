@@ -53,16 +53,39 @@ export const auth = {
             throw new ApiError(apiError.errcode, apiError.error)
         }
     },
+    whoAmI: async (apiCtx: ApiCtx) => {
+        const response = await fetch(`${apiCtx.homeServer}/_matrix/client/v3/account/whoami`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${apiCtx.accessToken}`,
+            },
+        })
+        const json = await response.json()
+        if (response.ok) {
+            const apiResponse = json as ApiLoginResponse
+            return { userId: apiResponse.user_id, isGuest: !!("is_guest" in apiResponse && apiResponse.is_guest) }
+        } else {
+            const apiError = json
+            throw new ApiError(apiError.errcode, apiError.error)
+        }
+    },
 }
 
 export class ApiCtx {
     homeServer: string
     accessToken: string
     deviceId: string
+    userId: string
+    isGuest: boolean
+    hasGottenWhoAmI: boolean
     constructor(homeServer: string, accessToken: string, deviceId: string) {
         this.homeServer = homeServer
         this.accessToken = accessToken
         this.deviceId = deviceId
+        this.userId = ""
+        this.isGuest = false
+        this.hasGottenWhoAmI = false
     }
     toString() {
         return JSON.stringify({ homeServer: this.homeServer, accessToken: this.accessToken, deviceId: this.deviceId })
